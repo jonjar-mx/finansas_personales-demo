@@ -1,0 +1,19 @@
+{
+  "name": "Finanzas personales",
+  "short_name": "Finanzas",
+  "description": "Aplicacion para gestionar cuentas, movimientos y alertas de finanzas personales.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#0d1b2f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

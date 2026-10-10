@@ -1,0 +1,49 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+     group: production-deploy
+     cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy frontend
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_COMMAND: ${{ vars.DEPLOY_COMMAND }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_PRIVATE_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+          test -n "$DEPLOY_COMMAND"
+
+          key_file="$(mktemp)"
+          known_hosts_file="$(mktemp)"
+          trap 'rm -f "$key_file" "$known_hosts_file"' EXIT
+          printf '%s\n' "$DEPLOY_PRIVATE_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$known_hosts_file"
+
+          ssh -i "$key_file" \
+            -o IdentitiesOnly=yes \
+            -o UserKnownHostsFile="$known_hosts_file" \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "$DEPLOY_COMMAND"
